@@ -57,5 +57,5 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 
 ```shell
 # The public IP's ID.
-tofu import tebib_public_ip_association.web eip-abc123
+terraform import tebib_public_ip_association.web eip-abc123
 ```

@@ -44,5 +44,5 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 
 ```shell
 # <group_id>/<user_id>, optionally with <organization_id>/ in front.
-tofu import tebib_iam_group_membership.abel grp-abc123/u-abc123
+terraform import tebib_iam_group_membership.abel grp-abc123/u-abc123
 ```

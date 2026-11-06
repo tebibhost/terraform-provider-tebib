@@ -52,5 +52,5 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 
 ```shell
 # <volume_id>/<vm_id>, optionally with <project_id>/ in front.
-tofu import tebib_volume_attachment.data vol-abc123/vm-def456
+terraform import tebib_volume_attachment.data vol-abc123/vm-def456
 ```

@@ -1,0 +1,76 @@
+# Release build for terraform-provider-tebib (ADR 0042). Follows the layout the Terraform and
+# OpenTofu registries expect: one zip per OS/arch named terraform-provider-tebib_<v>_<os>_<arch>.zip,
+# a SHA256SUMS file, its detached GPG signature (SHA256SUMS.sig), and the registry manifest.
+# On top of that, SHA256SUMS gets a keyless cosign signature (Sigstore bundle), like the CLI.
+#
+# Run by .github/workflows/terraform-provider-release.yml. Locally: goreleaser release --snapshot --clean
+version: 2
+
+project_name: terraform-provider-tebib
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - "-s -w -X main.version={{ .Version }}"
+    goos: [linux, darwin, windows, freebsd]
+    goarch: [amd64, arm64, arm, "386"]
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: darwin
+        goarch: arm
+      - goos: windows
+        goarch: arm
+    binary: "{{ .ProjectName }}_v{{ .Version }}"
+
+archives:
+  - formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
+  algorithm: sha256
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
+
+signs:
+  # Registry rule: a detached GPG signature of the checksums file.
+  - id: gpg
+    artifacts: checksum
+    args:
+      - "--batch"
+      - "--local-user"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+  # Our own rule (as for the CLI): a keyless Sigstore signature of the same file.
+  - id: cosign
+    cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sigstore.json"
+    args:
+      - "sign-blob"
+      - "--yes"
+      - "--bundle=${signature}"
+      - "${artifact}"
+
+release:
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
+  draft: true
+
+changelog:
+  disable: true

@@ -1,0 +1,4 @@
+# goreleaser output
+dist/
+# local builds
+terraform-provider-tebib

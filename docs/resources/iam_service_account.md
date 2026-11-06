@@ -47,5 +47,5 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 
 ```shell
 # <id> uses the provider's organization; <organization_id>/<id> names it.
-tofu import tebib_iam_service_account.ci sa-abc123
+terraform import tebib_iam_service_account.ci sa-abc123
 ```

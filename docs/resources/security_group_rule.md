@@ -77,5 +77,5 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 
 ```shell
 # <security_group_id>/<rule_id>, optionally with <project_id>/ in front.
-tofu import tebib_security_group_rule.ssh sg-abc123/sgr-def456
+terraform import tebib_security_group_rule.ssh sg-abc123/sgr-def456
 ```

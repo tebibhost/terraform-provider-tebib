@@ -363,11 +363,11 @@ type AccessKeyPatch struct {
 }
 
 type RoleIn struct {
-	Name               string            `json:"name"`
-	Description        string            `json:"description"`
-	TrustPolicy        map[string]any    `json:"trust_policy"`
-	MaxSessionSeconds  int64             `json:"max_session_seconds"`
-	Tags               map[string]string `json:"tags"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	TrustPolicy       map[string]any    `json:"trust_policy"`
+	MaxSessionSeconds int64             `json:"max_session_seconds"`
+	Tags              map[string]string `json:"tags"`
 }
 
 type Role struct {
