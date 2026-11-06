@@ -1,0 +1,1 @@
+terraform import tebib_snapshot.before_upgrade snap-abc123
