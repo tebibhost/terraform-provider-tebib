@@ -1,0 +1,75 @@
+# Release (ADR 0042). This file runs in the public tebibhost/terraform-provider-tebib
+# repository, which is a copy of terraform-provider-tebib/ in the platform monorepo: there,
+# the tag terraform-provider-vX.Y.Z makes .github/workflows/terraform-provider-release.yml
+# push this directory here and tag it vX.Y.Z, which starts this workflow. Don't change this
+# repository directly: changes go to the monorepo.
+#
+# It builds one zip per OS/arch, SHA256SUMS, the detached GPG signature the registries require
+# and a keyless cosign signature, then publishes the GitHub release. registry.terraform.io and
+# the OpenTofu registry read it from there.
+#
+# Secrets (this repository): GPG_PRIVATE_KEY (ASCII-armored) and GPG_PASSPHRASE. The public key
+# is registered with both registries for the tebibhost namespace.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # A public repository: GitHub-hosted runners cost nothing here.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write  # the release
+      id-token: write  # cosign keyless signing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: The tag must be vX.Y.Z with a CHANGELOG.md section
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="${REF_NAME#v}"
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::tag $REF_NAME is not vX.Y.Z"; exit 1; }
+          grep -q "^## $version" CHANGELOG.md \
+            || { echo "::error::CHANGELOG.md has no section for $version"; exit 1; }
+      - name: Import the release GPG key
+        id: gpg
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
+      - name: Release
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de  # v7.3.0
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.gpg.outputs.fingerprint }}
+      - name: Verify both signatures the way users will
+        env:
+          IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}
+        run: |
+          sums=$(ls dist/*_SHA256SUMS)
+          gpg --verify "$sums.sig" "$sums"
+          cosign verify-blob --bundle "$sums.sigstore.json" \
+            --certificate-identity "$IDENTITY" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$sums"
+          (cd dist && sha256sum -c --ignore-missing "$(basename "$sums")")

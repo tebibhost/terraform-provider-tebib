@@ -98,7 +98,7 @@ func TestIAMLifecycle(t *testing.T) {
 				resource.TestCheckResourceAttrSet("tebib_iam_access_key.forever", "secret"),
 				resource.TestCheckResourceAttr("tebib_iam_role.deploy", "max_session_seconds", "7200"),
 				resource.TestCheckResourceAttr("tebib_iam_policy.vms", "default_version", "1"),
-				resource.TestCheckResourceAttr("tebib_iam_policy_attachment.ci", "principal_type", "service_account"),
+				resource.TestCheckResourceAttr("tebib_iam_policy_attachment.ci", "principal_type", "service-account"),
 				resource.TestCheckResourceAttr("tebib_iam_policy_attachment.ci", "policy", "vms"),
 				resource.TestCheckResourceAttrPair("tebib_iam_policy_attachment.ci", "policy_id", "tebib_iam_policy.vms", "id"),
 				resource.TestCheckResourceAttr("tebib_iam_policy_attachment.role", "project_id", mockapi.Project),

@@ -284,7 +284,7 @@ func (s *Server) attachments(method, op string, rest []string, q map[string][]st
 		kind := ""
 		for _, k := range []string{"service-account", "role", "group", "user"} {
 			if strings.Contains(principal, ":"+k+"/") {
-				kind = strings.ReplaceAll(k, "-", "_")
+				kind = k // the API spells it service-account
 			}
 		}
 		if kind == "" {

@@ -182,6 +182,15 @@ func (p *tebibProvider) Resources(_ context.Context) []func() resource.Resource 
 		newPolicyAttachmentResource,
 		newGroupResource,
 		newGroupMembershipResource,
+		newBucketResource,
+		newStorageKeyResource,
+		newLoadBalancerResource,
+		newTargetGroupResource,
+		newListenerResource,
+		newLBTargetResource,
+		newDNSZoneResource,
+		newDNSRecordResource,
+		newSnapshotScheduleResource,
 	}
 }
 
@@ -194,5 +203,6 @@ func (p *tebibProvider) DataSources(_ context.Context) []func() datasource.DataS
 		newVpcDataSource,
 		newSubnetDataSource,
 		newSecurityGroupDataSource,
+		newStorageDataSource,
 	}
 }

@@ -425,6 +425,10 @@ func (s *Server) onGone(path string, o map[string]any) {
 				ip["vm_id"], ip["nat_gateway_id"], ip["association"] = nil, nil, "none"
 			}
 		}
+	case strings.Contains(path, "/load-balancers/"):
+		if ip := s.objs[pp+"/public-ips/"+str(o["public_ip_id"])]; ip != nil {
+			ip["association"] = "none"
+		}
 	case strings.Contains(path, "/nat-gateways/"):
 		if vpc := s.objs[pp+"/vpcs/"+str(o["vpc_id"])]; vpc != nil {
 			vpc["has_nat_gateway"] = false
@@ -450,6 +454,9 @@ func (s *Server) project(method, project string, parts []string, q map[string][]
 	pp := "/projects/" + project
 	coll := parts[0]
 	cp := pp + "/" + coll
+	if ok, status, out, e := s.p7(method, project, parts, q, body); ok {
+		return status, out, e
+	}
 	switch coll {
 	case "images":
 		return 200, images(), nil

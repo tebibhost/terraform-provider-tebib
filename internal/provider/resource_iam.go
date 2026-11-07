@@ -878,7 +878,7 @@ func (r *policyAttachmentResource) Schema(_ context.Context, _ resource.SchemaRe
 				"organization. Changing it replaces the attachment.", false),
 			"policy_id":      computedString("ID of the attached policy."),
 			"policy_trn":     computedString("TRN of the attached policy."),
-			"principal_type": computedString("`user`, `group`, `service_account` or `role`."),
+			"principal_type": computedString("`user`, `group`, `service-account` or `role`."),
 			"created_at":     computedString("When it was created (RFC 3339)."),
 		},
 	}

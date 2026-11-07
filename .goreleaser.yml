@@ -3,7 +3,8 @@
 # a SHA256SUMS file, its detached GPG signature (SHA256SUMS.sig), and the registry manifest.
 # On top of that, SHA256SUMS gets a keyless cosign signature (Sigstore bundle), like the CLI.
 #
-# Run by .github/workflows/terraform-provider-release.yml. Locally: goreleaser release --snapshot --clean
+# Run by .github/workflows/release.yml in the public repository (a copy of this directory, see
+# the monorepo's terraform-provider-release.yml). Locally: goreleaser release --snapshot --clean
 version: 2
 
 project_name: terraform-provider-tebib
@@ -70,7 +71,7 @@ release:
   extra_files:
     - glob: terraform-registry-manifest.json
       name_template: "{{ .ProjectName }}_{{ .Version }}_manifest.json"
-  draft: true
+  draft: false
 
 changelog:
   disable: true

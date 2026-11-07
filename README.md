@@ -4,7 +4,12 @@ The TebibHost provider for Terraform and OpenTofu (Phase 7, ADR 0042). It manage
 through the public API (`/api/v1` on `cloud.tebibhost.com`) with the same credentials as the
 `tebib` CLI.
 
-Not released yet. Until it is, use it from a local build (see "Develop" below).
+Preview (0.x): breaking changes are allowed before 1.0.0 and are listed in CHANGELOG.md. Until
+the first release is on the registries, use it from a local build (see "Develop" below).
+
+This directory is developed in the TebibHost platform monorepo and copied to the public
+[tebibhost/terraform-provider-tebib](https://github.com/tebibhost/terraform-provider-tebib)
+repository at each release: change it in the monorepo, not in the public repository.
 
 ## Use
 
@@ -30,12 +35,12 @@ What it manages:
 | --- | --- | --- |
 | Projects | `tebib_project` | `tebib_project` |
 | Network | `tebib_vpc`, `tebib_subnet`, `tebib_security_group`, `tebib_security_group_rule`, `tebib_nat_gateway`, `tebib_public_ip`, `tebib_public_ip_association` | `tebib_vpc`, `tebib_subnet`, `tebib_security_group` |
-| Compute | `tebib_ssh_key`, `tebib_vm`, `tebib_volume`, `tebib_volume_attachment`, `tebib_snapshot` | `tebib_images`, `tebib_instance_types` |
+| Compute | `tebib_ssh_key`, `tebib_vm`, `tebib_volume`, `tebib_volume_attachment`, `tebib_snapshot`, `tebib_snapshot_schedule` | `tebib_images`, `tebib_instance_types` |
+| Load balancers | `tebib_load_balancer`, `tebib_load_balancer_target_group`, `tebib_load_balancer_listener`, `tebib_load_balancer_target` | |
+| Object storage | `tebib_bucket`, `tebib_storage_key` | `tebib_storage` |
+| DNS | `tebib_dns_zone`, `tebib_dns_record` | |
 | IAM | `tebib_iam_service_account`, `tebib_iam_access_key`, `tebib_iam_role`, `tebib_iam_policy`, `tebib_iam_policy_attachment`, `tebib_iam_group`, `tebib_iam_group_membership` | |
 | Billing | | `tebib_prices` |
-
-Add when merged (other Phase 7 work): object storage buckets and keys, snapshot schedules,
-load balancers, DNS zones and records.
 
 ## How it works
 
@@ -79,7 +84,18 @@ TF_ACC=1 TEBIB_ACCESS_KEY_ID=... TEBIB_SECRET_ACCESS_KEY=... TEBIB_ORGANIZATION=
 
 ## Release
 
-`.github/workflows/terraform-provider-release.yml` builds with goreleaser on a
-`terraform-provider-v*` tag: zips per platform, `SHA256SUMS`, a GPG signature (registry rule)
-and a cosign signature. It is not run yet; the registry namespace, the public repository and
-the signing key are open questions in ADR 0042.
+1. Run the acceptance tests against the lab (above) with a test project.
+2. In CHANGELOG.md, turn `## X.Y.Z (unreleased)` into `## X.Y.Z (YYYY-MM-DD)`.
+3. Tag the monorepo `terraform-provider-vX.Y.Z` and push the tag.
+
+The monorepo's `.github/workflows/terraform-provider-release.yml` then copies this directory
+(`git subtree split`) to the public repository's `main` and tags it `vX.Y.Z`. There,
+[.github/workflows/release.yml](.github/workflows/release.yml) builds the release with
+goreleaser: zips per platform, `SHA256SUMS`, its GPG signature (the registries require it) and
+a keyless cosign signature, and publishes it. registry.terraform.io and the OpenTofu registry
+pick it up from the GitHub release. A dry run of the build (no signing, no push) is the
+monorepo workflow's manual run.
+
+The release key: RSA 4096, `TebibHost Releases <releases@tebibhost.com>`, fingerprint
+`83C01CCF0547A9F4EC2EDBB2EB23A14F9FBCD168`, expires 2028-11-06. Its private part is only in
+the public repository's `GPG_PRIVATE_KEY` secret and an offline backup.

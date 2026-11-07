@@ -39,7 +39,7 @@ resource "tebib_iam_policy_attachment" "ci_vm_operator" {
 - `id` (String) Attachment ID.
 - `policy_id` (String) ID of the attached policy.
 - `policy_trn` (String) TRN of the attached policy.
-- `principal_type` (String) `user`, `group`, `service_account` or `role`.
+- `principal_type` (String) `user`, `group`, `service-account` or `role`.
 
 ## Import
 

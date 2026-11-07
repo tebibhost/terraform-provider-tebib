@@ -32,6 +32,33 @@ func Wait[T Stateful](ctx context.Context, c *Client, path string, ready func(T)
 	return wait(ctx, c, path, false, ready)
 }
 
+// WaitFor polls path until done is true, whatever the lifecycle state: for resources that
+// can stay in a transitional state for a long time by design (a DNS zone stays "creating"
+// until its domain is verified). State "error" still ends the wait with an error.
+func WaitFor[T Stateful](ctx context.Context, c *Client, path string, done func(T) bool) (*T, error) {
+	last := ""
+	for {
+		var obj T
+		if err := c.Get(ctx, path, &obj); err != nil {
+			if ctx.Err() != nil {
+				return nil, &WaitTimeoutError{Path: path, State: last}
+			}
+			return nil, err
+		}
+		life := obj.Life()
+		last = life.State
+		if life.State == "error" {
+			return &obj, &ResourceFailedError{Path: path, Message: life.StatusMessage}
+		}
+		if done(obj) {
+			return &obj, nil
+		}
+		if err := c.sleep(ctx, c.PollInterval); err != nil {
+			return &obj, &WaitTimeoutError{Path: path, State: last}
+		}
+	}
+}
+
 // WaitGone polls path until a deleted resource is gone (404 or state "deleted").
 func WaitGone[T Stateful](ctx context.Context, c *Client, path string) error {
 	_, err := wait[T](ctx, c, path, true, nil)
