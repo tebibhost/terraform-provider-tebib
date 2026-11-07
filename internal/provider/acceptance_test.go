@@ -252,9 +252,10 @@ resource "tebib_dns_record" "spf" {
 	})
 }
 
-// TestAccLoadBalancer runs a VM behind a public load balancer, with a snapshot schedule on
-// the VM. It needs the capacity for a VM and the load balancer's nodes, and two public IPv4
-// addresses (the NAT gateway's and the load balancer's).
+// TestAccLoadBalancer puts a VM behind a public load balancer, with a snapshot schedule on
+// the VM. It checks the wiring, not traffic (TestAccFullStack covers a VM on the internet).
+// It needs the capacity for a VM and the load balancer's nodes, and two public IPv4 addresses
+// (the NAT gateway's and the load balancer's).
 func TestAccLoadBalancer(t *testing.T) {
 	name := "tf-acc-" + acctest.RandString(6)
 	cfg := func(tgPort int) string {
@@ -274,6 +275,7 @@ data "tebib_subnet" "default" {
   default = true
 }
 
+# Public load balancers are reached through their VPC's NAT gateway.
 resource "tebib_public_ip" "nat" {
   name = "%[1]s-nat"
 }
@@ -288,8 +290,7 @@ resource "tebib_vm" "web" {
   name          = %[1]q
   image         = data.tebib_images.ubuntu.names[0]
   instance_type = "b1.small"
-  user_data     = "#cloud-config\npackages: [nginx]\n"
-  depends_on    = [tebib_nat_gateway.main]
+  subnet_id     = data.tebib_subnet.default.id
 }
 
 resource "tebib_snapshot_schedule" "nightly" {
@@ -302,7 +303,8 @@ resource "tebib_snapshot_schedule" "nightly" {
 }
 
 resource "tebib_load_balancer" "web" {
-  name = %[1]q
+  name       = %[1]q
+  depends_on = [tebib_nat_gateway.main]
 }
 
 resource "tebib_load_balancer_target_group" "web" {
@@ -338,7 +340,12 @@ resource "tebib_load_balancer_target" "web" {
 			},
 			{
 				Config: cfg(8080),
-				Check:  resource.TestCheckResourceAttr("tebib_load_balancer_target.web", "effective_port", "8080"),
+				Check:  resource.TestCheckResourceAttr("tebib_load_balancer_target_group.web", "port", "8080"),
+			},
+			{
+				// The target follows its group's port; Terraform sees it on the next refresh.
+				RefreshState: true,
+				Check:        resource.TestCheckResourceAttr("tebib_load_balancer_target.web", "effective_port", "8080"),
 			},
 			{ResourceName: "tebib_load_balancer_target_group.web", ImportState: true, ImportStateVerify: true,
 				ImportStateIdFunc: importID("tebib_load_balancer_target_group.web", "load_balancer_id", "id"), ImportStateVerifyIgnore: []string{"timeouts"}},
